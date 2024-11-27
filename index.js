@@ -84,7 +84,6 @@ async function run() {
     app.post("/pets/:id", async (req, res) => {
       const adoptUser = req.body;
       const id = req.params.id;
-      console.log(adoptUser, id);
       const filter = { _id: new ObjectId(id) };
       const updateDoc = {
         $set: {
@@ -116,7 +115,6 @@ async function run() {
       const myPet = req.body;
       const filter = { _id: new ObjectId(myPetId) };
       const options = { upsert: true };
-      console.log(myPet, myPetId);
       if (myPet.name) {
         const updateDoc = {
           $set: {
@@ -167,7 +165,7 @@ async function run() {
       res.send(result);
     });
 
-    // Donation
+    // DONATIONS
     app.get("/donations", async (req, res) => {
       const result = await donationCollection.find().toArray();
       res.send(result);
@@ -207,7 +205,6 @@ async function run() {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
       const options = { upsert: true };
-      console.log(data, id);
       if (data.name) {
         const updateDoc = {
           $set: {
@@ -229,7 +226,6 @@ async function run() {
       }
 
       if (data.donatedUser) {
-        console.log(data.newAmount);
         const updateDoc = {
           $push: {
             donatedPersons: data.donatedUser,
@@ -259,17 +255,16 @@ async function run() {
       }
     });
 
-    // My donated money:
+    // MY DONATED MONEY
     app.get("/myDonation/:email", async (req, res) => {
       const myEmail = req.params.email;
       const query = { "donatedPersons.email": myEmail };
-      console.log(myEmail, query);
 
       const result = await donationCollection.find(query).toArray();
       res.send(result);
     });
 
-    // Payment
+    // PAYMENT
     app.post("/create-payment-intent", async (req, res) => {
       const { price } = req.body;
       const totalAmount = parseInt(price * 100);
@@ -278,7 +273,6 @@ async function run() {
           error: "The amount must be at least $0.50.",
         });
       }
-      console.log("amount in payment intent:", totalAmount);
       const paymentIntent = await stripe.paymentIntents.create({
         amount: totalAmount,
         currency: "usd",
@@ -289,11 +283,10 @@ async function run() {
       });
     });
 
-    // Payment-Refund
+    // PAYMENT-REFUND
     app.post("/paymentRefund", async (req, res) => {
-      const { paymentId, amount, donationId,newValueForDonation } = req.body;
-      console.log(newValueForDonation);
-      console.log("datas:", paymentId, amount, donationId);
+      const { paymentId, amount, donationId, newValueForDonation } = req.body;
+
       if (!paymentId) {
         return res.status(400).send({ error: "PaymentIntent ID is required" });
       }
@@ -303,7 +296,6 @@ async function run() {
         "donatedPersons.paymentIntentId": paymentId,
       };
       const resultFindOne = await donationCollection.findOne(filter);
-      console.log(resultFindOne);
 
       const options = { upsert: true };
       const updateDoc = {
@@ -311,8 +303,8 @@ async function run() {
           donatedPersons: { paymentIntentId: paymentId },
         },
         $set: {
-          donatedMoney: newValueForDonation
-        }
+          donatedMoney: newValueForDonation,
+        },
       };
 
       const refund = await stripe.refunds.create({
