@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const jwt = require("jsonwebtoken");
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -40,6 +41,32 @@ async function run() {
       .db("assignment-12")
       .collection("donations");
 
+    // MIDDLEWARES
+    // VERIFY TOKEN
+    const verifyToken = (req, res, next) => {
+      // req.headers.authorization comes from client site like useAxiosSecure file
+      console.log("Inside verify token: ", req?.headers?.authorization);
+      if (!req.headers.authorization) {
+        return res.status(401).send({ message: "Unauthorized Access!" });
+      }
+      const token = req.headers.authorization.split(" ")[1];
+      console.log(token);
+      jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (error, decoded) => {
+        if (error) {
+          return res.status(401).send({ message: "Unauthorized Access!" });
+        }
+        res.decoded = decoded;
+        next();
+      });
+    };
+
+    // JWT Related API (Pass the token in client site)
+    app.post("/jwt", async (req, res) => {
+      const user = req.body;
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET);
+      res.send({ token });
+    });
+
     // USERS
     app.get("/users", async (req, res) => {
       const allUser = await userCollection.find().toArray();
@@ -67,21 +94,21 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/pets/:id", async (req, res) => {
+    app.get("/pets/:id",verifyToken ,async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await petCollection.findOne(query);
       res.send(result);
     });
 
-    app.post("/pets", async (req, res) => {
+    app.post("/pets",verifyToken, async (req, res) => {
       const petInfo = req.body;
       const result = await petCollection.insertOne(petInfo);
       res.send(result);
     });
 
     // For user who wants to adopt
-    app.post("/pets/:id", async (req, res) => {
+    app.post("/pets/:id",verifyToken, async (req, res) => {
       const adoptUser = req.body;
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
@@ -96,21 +123,21 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/myPets/:email", async (req, res) => {
+    app.get("/myPets/:email",verifyToken, async (req, res) => {
       const email = req.params.email;
       const query = { user: email };
       const result = await petCollection.find(query).toArray();
       res.send(result);
     });
 
-    app.delete("/myPets/:id", async (req, res) => {
+    app.delete("/myPets/:id",verifyToken, async (req, res) => {
       const petId = req.params.id;
       const query = { _id: new ObjectId(petId) };
       const result = await petCollection.deleteOne(query);
       res.send(result);
     });
 
-    app.post("/myPets/:id", async (req, res) => {
+    app.post("/myPets/:id",verifyToken, async (req, res) => {
       const myPetId = req.params.id;
       const myPet = req.body;
       const filter = { _id: new ObjectId(myPetId) };
@@ -152,7 +179,7 @@ async function run() {
       res.send(result);
     });
 
-    app.delete("/pets/:id", async (req, res) => {
+    app.delete("/pets/:id",verifyToken, async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
       const options = { upsert: true };
@@ -179,27 +206,27 @@ async function run() {
       res.send(result);
     });
 
-    app.post("/donations", async (req, res) => {
+    app.post("/donations",verifyToken, async (req, res) => {
       const donationInfo = req.body;
       const result = await donationCollection.insertOne(donationInfo);
       res.send(result);
     });
 
-    app.get("/donations/:email", async (req, res) => {
+    app.get("/donations/:email",verifyToken, async (req, res) => {
       const email = req.params.email;
       const query = { user: email };
       const result = await donationCollection.find(query).toArray();
       res.send(result);
     });
 
-    app.get("/don/:id", async (req, res) => {
+    app.get("/don/:id",verifyToken, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await donationCollection.findOne(query);
       res.send(result);
     });
 
-    app.post("/donations/:id", async (req, res) => {
+    app.post("/donations/:id",verifyToken, async (req, res) => {
       const data = req.body;
 
       const id = req.params.id;
@@ -256,7 +283,7 @@ async function run() {
     });
 
     // MY DONATED MONEY
-    app.get("/myDonation/:email", async (req, res) => {
+    app.get("/myDonation/:email",verifyToken, async (req, res) => {
       const myEmail = req.params.email;
       const query = { "donatedPersons.email": myEmail };
 
