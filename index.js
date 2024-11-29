@@ -100,7 +100,7 @@ async function run() {
     });
 
     // USER ADMIN
-    app.get("/user/admin/:email", verifyToken, async(req, res) => {
+    app.get("/user/admin/:email", verifyToken, async (req, res) => {
       const email = req.params.email;
       if (!email) {
         return res.status(403).send({ message: "unauthorized access" });
@@ -120,13 +120,13 @@ async function run() {
       res.send(allUser);
     });
 
-   app.get("/users/:email", async(req,res)=>{
-    const email = req.params.email
-    console.log(email);
-    const query = {email: email}
-    const result= await userCollection.findOne(query)
-    res.send(result)
-   })
+    app.get("/users/:email", async (req, res) => {
+      const email = req.params.email;
+      console.log(email);
+      const query = { email: email };
+      const result = await userCollection.findOne(query);
+      res.send(result);
+    });
 
     app.post("/users", async (req, res) => {
       const userInfo = req.body;
@@ -144,10 +144,34 @@ async function run() {
     });
 
     // PETS
+
     app.get("/pets", async (req, res) => {
       const result = await petCollection.find().toArray();
       res.send(result);
     });
+
+    app.get("/petsName/:name", async (req, res) => {
+      const petName = req.params.name;
+      console.log(req.params);
+      const query = {name: petName}
+      const result = await petCollection.findOne(query)
+      if(result){
+        console.log("if",result);
+        res.send(result);
+      }
+      
+      else{
+        console.log("else",result);
+        res.send({message: "No pets available in this name!"})
+      }
+    });
+
+    app.get("/petsCategorized/:category", async(req,res)=>{
+      const petCategory = req.params.category
+      const query = {category: petCategory}
+      const result = await petCollection.find(query).toArray();
+      res.send(result);
+    })
 
     app.get("/pets/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
