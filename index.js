@@ -45,12 +45,10 @@ async function run() {
     // VERIFY TOKEN
     const verifyToken = (req, res, next) => {
       // req.headers.authorization comes from client site like useAxiosSecure file
-      console.log("Inside verify token: ", req?.headers?.authorization);
       if (!req.headers.authorization) {
         return res.status(401).send({ message: "Unauthorized Access!" });
       }
       const token = req.headers.authorization.split(" ")[1];
-      console.log(token);
       jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (error, decoded) => {
         if (error) {
           return res.status(401).send({ message: "Unauthorized Access!" });
@@ -122,7 +120,6 @@ async function run() {
 
     app.get("/users/:email", async (req, res) => {
       const email = req.params.email;
-      console.log(email);
       const query = { email: email };
       const result = await userCollection.findOne(query);
       res.send(result);
@@ -152,26 +149,21 @@ async function run() {
 
     app.get("/petsName/:name", async (req, res) => {
       const petName = req.params.name;
-      console.log(req.params);
-      const query = {name: petName}
-      const result = await petCollection.findOne(query)
-      if(result){
-        console.log("if",result);
+      const query = { name: petName };
+      const result = await petCollection.findOne(query);
+      if (result) {
         res.send(result);
-      }
-      
-      else{
-        console.log("else",result);
-        res.send({message: "No pets available in this name!"})
+      } else {
+        res.send({ message: "No pets available in this name!" });
       }
     });
 
-    app.get("/petsCategorized/:category", async(req,res)=>{
-      const petCategory = req.params.category
-      const query = {category: petCategory}
+    app.get("/petsCategorized/:category", async (req, res) => {
+      const petCategory = req.params.category;
+      const query = { category: petCategory };
       const result = await petCollection.find(query).toArray();
       res.send(result);
-    })
+    });
 
     app.get("/pets/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
@@ -191,12 +183,32 @@ async function run() {
       const adoptUser = req.body;
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
+      const option = { upsert: true };
+
+      if (adoptUser?.adopt) {
+        const updateDoc = {
+          $set: {
+            adopt: false,
+          },
+        };
+        const result = await petCollection.updateOne(filter, updateDoc, option);
+        return res.send(result);
+      }
+      if (!adoptUser?.adopt) {
+        const updateDoc = {
+          $set: {
+            adopt: true,
+          },
+        };
+        const result = await petCollection.updateOne(filter, updateDoc, option);
+        return res.send(result);
+      }
+
       const updateDoc = {
         $set: {
           adoptUser: adoptUser,
         },
       };
-      const option = { upsert: true };
 
       const result = await petCollection.updateOne(filter, updateDoc, option);
       res.send(result);
@@ -305,6 +317,25 @@ async function run() {
       res.send(result);
     });
 
+    app.post("/donationStatus/:id", verifyToken, async (req, res) => {
+      const id = req.params.id;
+      const data = req.body;
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+
+      const updateData = {
+        $set: {
+          canDonate: !data.status,
+        },
+      };
+      const result = await donationCollection.updateOne(
+        filter,
+        updateData,
+        options
+      );
+      res.send(result);
+    });
+
     app.post("/donations/:id", verifyToken, async (req, res) => {
       const data = req.body;
 
@@ -359,6 +390,13 @@ async function run() {
         );
         return res.send(result);
       }
+    });
+
+    app.delete("/donation/:id", verifyToken, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await donationCollection.deleteOne(query);
+      res.send(result);
     });
 
     // MY DONATED MONEY
