@@ -7,7 +7,7 @@ const port = process.env.PORT || 5000;
 require("dotenv").config();
 app.use(
   cors({
-    origin: ["http://localhost:5173"],
+    origin: ["https://bespoke-klepon-c7fe9f.netlify.app", "http://localhost:5173", "https://cozypets-assignment-012.surge.sh"],
     credentials: true,
   })
 );
@@ -28,11 +28,11 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-    await client.connect();
-    await client.db("admin").command({ ping: 1 });
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!"
-    );
+    // await client.connect();
+    // await client.db("admin").command({ ping: 1 });
+    // console.log(
+    //   "Pinged your deployment. You successfully connected to MongoDB!"
+    // );
 
     // DatabaseCollections
     const userCollection = client.db("assignment-12").collection("users");
